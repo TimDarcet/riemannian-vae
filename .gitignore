@@ -1,0 +1,4 @@
+.vscode
+__pycache__
+cifar-10*
+lightning_logs
