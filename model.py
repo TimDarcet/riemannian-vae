@@ -16,13 +16,17 @@ from utils import kl_divergence
 
 class VAE(pl.LightningModule):
     """A simple VAE class with Resnet18 backends using Pytorch-lightning"""
-    def __init__(self, latent_dim=256, input_height=32):
+    # Default params are for CIFAR10
+    def __init__(self, latent_dim=256, input_height=32, input_channels=3):
         super().__init__()
         self.save_hyperparameters()
 
         self.latent_dim = latent_dim
         # encoder, decoder
         self.encoder = resnet18_encoder(False, False)
+        self.encoder.conv1 = nn.Conv2d(input_channels, 64,
+                                       kernel_size=(3, 3), stride=(1, 1),
+                                       padding=(1, 1), bias=False)
         self.decoder = resnet18_decoder(
             latent_dim=latent_dim,
             input_height=input_height,
