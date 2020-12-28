@@ -3,4 +3,4 @@
 from pl_bolts.datamodules import CIFAR10DataModule, MNISTDataModule
 
 
-datamodule = MNISTDataModule('./data')
+datamodule = CIFAR10DataModule('./data')
