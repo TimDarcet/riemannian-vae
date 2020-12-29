@@ -3,7 +3,7 @@ pytorch-lightning VAE model for MVA computational stats course
 Authors:
 Timothee Darcet timothee.darcet@gmail.com
 Clement Grisi
-resnet18-VAE code inspired by 
+resnet18-VAE code inspired by
 towardsdatascience.com/variational-autoencoder-demystified-with-pytorch-implementation-3a06bee395ed
 """
 
@@ -11,7 +11,7 @@ import pytorch_lightning as pl
 from pl_bolts.models.autoencoders.components import resnet18_decoder, resnet18_encoder
 from torch import nn
 import torch
-from utils import kl_divergence
+from utils import kl_divergence, jacobian
 
 
 class VAE(pl.LightningModule):
@@ -89,3 +89,41 @@ class VAE(pl.LightningModule):
             'val_recon_likelihood': recon_lh.mean()
         })
         return elbo
+
+    def gen_image(self):
+        """Generate a random image by sampling the latent distribution"""
+        mu = torch.zeros(self.latent_dim)
+        std = torch.ones(self.latent_dim)
+        latent_z = torch.distributions.Normal(mu, std).rsample()
+        return self(latent_z)  # MEF: Should I unsqueez z to a size 1 batch ?
+
+    def random_walk(self, length=10, std=1):
+        """Generate a sequence of random images
+        by doing a gaussian random walk starting at zero in the latent space.
+        Uses a diagonal covariance matrix equal to std times the identity."""
+        latent_z = torch.zeros((length, self.latent_dim))
+        stds = std * torch.ones(self.latent_dim)
+        for i in range(1, length):
+            latent_z[i] = torch.distributions.Normal(latent_z[i - 1], stds).rsample()
+        return self(latent_z)
+
+    def generator_jacobian(self, latent_z):
+        """Calculate the jacobian of the generator network at latent_z"""
+        # TODO: does it work? Do I need to activate gradient tracking on latent_z?
+        output = torch.flatten(self(latent_z))
+        gen_jacobian = jacobian(output, latent_z)
+        return gen_jacobian
+
+    def riemann_walk(self, length=10, std=1):
+        """Generate a sequence of random images
+        by doing a gaussian random walk starting at zero in the latent space.
+        Uses the Riemannian metric as covariance."""
+        latent_z = torch.zeros((length, self.latent_dim))
+        for i in range(1, length):
+            jac = self.generator_jacobian(latent_z)
+            metric = torch.transpose(jac) @ jac
+            # TODO: Given the metric, what should I use as covariance matrix?
+            # The metric itself seems fine
+            distrib = torch.distributions.MultivariateNormal(latent_z[i - 1], std * metric)
+            latent_z[i] = distrib.rsample()
+        return self(latent_z)
