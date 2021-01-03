@@ -63,7 +63,7 @@ class VAE(pl.LightningModule):
             'train_elbo': elbo,
             'train_kl': kl_div.mean(),
             'train_recon_likelihood': recon_lh.mean()
-        })
+        }, prog_bar=True)
         return elbo
 
     def validation_step(self, data, _):
