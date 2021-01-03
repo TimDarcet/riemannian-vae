@@ -7,5 +7,5 @@ from data import datamodule
 
 pl.seed_everything(42)
 vae = VAE(latent_dim=256, input_height=32, input_channels=3)
-trainer = pl.Trainer(gpus=1, max_epochs=10, progress_bar_refresh_rate=20)
-trainer.fit(vae, datamodule)
+# trainer = pl.Trainer(gpus=1, max_epochs=1, progress_bar_refresh_rate=20)
+# trainer.fit(vae, datamodule)

@@ -5,6 +5,7 @@ Differentitation functions from https://github.com/pytorch/pytorch/issues/8304
 
 import matplotlib.pyplot as plt
 import torch
+from tqdm import trange
 
 
 def normalize_image(image):
@@ -31,7 +32,7 @@ def kl_divergence(z, mu, std):
 def display_image(image, ax=plt):
     """Display an image with matplotlib"""
     ax.axis("off")
-    ax.imshow(denormalize_image(image.cpu()).permute(1, 2, 0))
+    ax.imshow(denormalize_image(image.cpu().detach()).permute(1, 2, 0))
 
 def display_images(imbatch):
     """Display a batch of images with matplotlib"""
@@ -48,15 +49,19 @@ def gradient(y, x, grad_outputs=None):
     """Compute dy/dx @ grad_outputs"""
     if grad_outputs is None:
         grad_outputs = torch.ones_like(y)
-    grad = torch.autograd.grad(y, [x], grad_outputs = grad_outputs, create_graph=True)[0]
+    grad = torch.autograd.grad(y, [x],
+                               grad_outputs=grad_outputs,
+                               create_graph=True,
+                               only_inputs=True)[0]
     return grad
 
 def jacobian(y, x):
     """Compute dy/dx = dy/dx @ grad_outputs;
     for grad_outputs in [1, 0, ..., 0], [0, 1, 0, ..., 0], ...., [0, ..., 0, 1]"""
     jac = torch.zeros(y.shape[0], x.shape[0])
-    for i in range(y.shape[0]):
+    for i in trange(y.shape[0]):
         grad_outputs = torch.zeros_like(y)
         grad_outputs[i] = 1
-        jac[i] = gradient(y, x, grad_outputs = grad_outputs)
+        tmp = gradient(y, x, grad_outputs=grad_outputs)
+        jac[i] = gradient(y, x, grad_outputs=grad_outputs)
     return jac

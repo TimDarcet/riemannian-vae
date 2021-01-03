@@ -33,6 +33,9 @@ class VAE(pl.LightningModule):
             first_conv=False,
             maxpool1=False
         )
+        self.encoder.conv1 = nn.Conv2d(64, input_channels,
+                                       kernel_size=(3, 3), stride=(1, 1),
+                                       padding=(1, 1), bias=False)
         # Output probability distribution std
         self.log_scale = nn.Parameter(torch.Tensor([0.0]))
 
@@ -110,7 +113,8 @@ class VAE(pl.LightningModule):
     def generator_jacobian(self, latent_z):
         """Calculate the jacobian of the generator network at latent_z"""
         # TODO: does it work? Do I need to activate gradient tracking on latent_z?
-        output = torch.flatten(self(latent_z))
+        latent_z.requires_grad = True
+        output = torch.flatten(self(torch.unsqueeze(latent_z, 0)))
         gen_jacobian = jacobian(output, latent_z)
         return gen_jacobian
 
@@ -120,7 +124,7 @@ class VAE(pl.LightningModule):
         Uses the Riemannian metric as covariance."""
         latent_z = torch.zeros((length, self.latent_dim))
         for i in range(1, length):
-            jac = self.generator_jacobian(latent_z)
+            jac = self.generator_jacobian(latent_z[i - 1])
             metric = torch.transpose(jac) @ jac
             # TODO: Given the metric, what should I use as covariance matrix?
             # The metric itself seems fine
