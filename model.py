@@ -33,7 +33,7 @@ class VAE(pl.LightningModule):
             first_conv=False,
             maxpool1=False
         )
-        self.encoder.conv1 = nn.Conv2d(64, input_channels,
+        self.decoder.conv1 = nn.Conv2d(64, input_channels,
                                        kernel_size=(3, 3), stride=(1, 1),
                                        padding=(1, 1), bias=False)
         # Output probability distribution std
