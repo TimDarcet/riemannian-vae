@@ -95,7 +95,7 @@ class VAE(pl.LightningModule):
         mu = torch.zeros(self.latent_dim)
         std = torch.ones(self.latent_dim)
         latent_z = torch.distributions.Normal(mu, std).rsample()
-        return self(latent_z)  # MEF: Should I unsqueez z to a size 1 batch ?
+        return self(torch.unsqueeze(latent_z))
 
     def random_walk(self, length=10, std=1):
         """Generate a sequence of random images
