@@ -87,7 +87,7 @@ class VAE(pl.LightningModule):
             'val_elbo': elbo,
             'val_kl': kl_div.mean(),
             'val_recon_likelihood': recon_lh.mean()
-        })
+        }, prog_bar=True)
         return elbo
 
     def gen_image(self):
