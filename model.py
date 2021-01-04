@@ -14,6 +14,7 @@ import torch
 from utils import kl_divergence, jacobian
 
 
+
 class VAE(pl.LightningModule):
     """A simple VAE class with Resnet18 backends using Pytorch-lightning"""
     # Default params are for CIFAR10
@@ -117,6 +118,13 @@ class VAE(pl.LightningModule):
         output = torch.flatten(self(torch.unsqueeze(latent_z, 0)))
         gen_jacobian = jacobian(output, latent_z)
         return gen_jacobian
+
+    def generator_jacobian_2(self, latent_z):
+        """Calculate the jacobian of the generator network at latent_z"""
+        def flat_gen(z):
+            return torch.flatten(self(torch.unsqueeze(z, 0)))
+        latent_z.requires_grad = True
+        return torch.autograd.functional.jacobian(flat_gen, latent_z, strict=True)
 
     def riemann_walk(self, length=10, std=1):
         """Generate a sequence of random images
