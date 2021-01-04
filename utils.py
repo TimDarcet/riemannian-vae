@@ -32,7 +32,7 @@ def kl_divergence(z, mu, std):
 def display_gray_image(image, ax=plt):
     """Display an image with matplotlib"""
     ax.axis("off")
-    ax.imshow(denormalize_image(image.cpu().detach())[0])
+    ax.imshow(image.cpu().detach()[0])
 
 def display_gray_images(imbatch):
     """Display a batch of images with matplotlib"""
@@ -43,7 +43,7 @@ def display_gray_images(imbatch):
         for c in range(4):
             axes[r][c].axis("off")
     for i in range(imbatch.shape[0]):
-        display_image(imbatch[i], axes[i // 4][i % 4])
+        display_gray_image(imbatch[i], axes[i // 4][i % 4])
 
 def display_image(image, ax=plt):
     """Display an image with matplotlib"""
