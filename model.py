@@ -111,15 +111,14 @@ class VAE(pl.LightningModule):
             latent_z[i] = torch.distributions.Normal(latent_z[i - 1], stds).rsample()
         return self(latent_z)
 
-    def generator_jacobian(self, latent_z):
-        """Calculate the jacobian of the generator network at latent_z"""
-        # TODO: does it work? Do I need to activate gradient tracking on latent_z?
-        latent_z.requires_grad = True
-        output = torch.flatten(self(torch.unsqueeze(latent_z, 0)))
-        gen_jacobian = jacobian(output, latent_z)
-        return gen_jacobian
+    # def generator_jacobian(self, latent_z):
+    #     """Calculate the jacobian of the generator network at latent_z"""
+    #     latent_z.requires_grad = True
+    #     output = torch.flatten(self(torch.unsqueeze(latent_z, 0)))
+    #     gen_jacobian = jacobian(output, latent_z)
+    #     return gen_jacobian
 
-    def generator_jacobian_2(self, latent_z):
+    def generator_jacobian(self, latent_z):
         """Calculate the jacobian of the generator network at latent_z"""
         def flat_gen(z):
             return torch.flatten(self(torch.unsqueeze(z, 0)))
@@ -133,7 +132,7 @@ class VAE(pl.LightningModule):
         latent_z = torch.zeros((length, self.latent_dim))
         for i in range(1, length):
             jac = self.generator_jacobian(latent_z[i - 1])
-            metric = torch.transpose(jac) @ jac
+            metric = torch.transpose(jac, 0, 1) @ jac
             # TODO: Given the metric, what should I use as covariance matrix?
             # The metric itself seems fine
             distrib = torch.distributions.MultivariateNormal(latent_z[i - 1], std * metric)
