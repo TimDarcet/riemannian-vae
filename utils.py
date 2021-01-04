@@ -78,6 +78,5 @@ def jacobian(y, x):
     for i in trange(y.shape[0]):
         grad_outputs = torch.zeros_like(y)
         grad_outputs[i] = 1
-        tmp = gradient(y, x, grad_outputs=grad_outputs)
         jac[i] = gradient(y, x, grad_outputs=grad_outputs)
     return jac

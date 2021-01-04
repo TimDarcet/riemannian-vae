@@ -132,9 +132,11 @@ class VAE(pl.LightningModule):
         latent_z = torch.zeros((length, self.latent_dim))
         for i in range(1, length):
             jac = self.generator_jacobian(latent_z[i - 1])
-            metric = torch.transpose(jac, 0, 1) @ jac
+            metric = jac.T @ jac
             # TODO: Given the metric, what should I use as covariance matrix?
             # The metric itself seems fine
-            distrib = torch.distributions.MultivariateNormal(latent_z[i - 1], std * metric)
+            # Add in a small identity matrix to handle singular covariance
+            covariance = std * (metric + 0.01 * torch.eye(self.latent_dim))
+            distrib = torch.distributions.MultivariateNormal(latent_z[i - 1], covariance)
             latent_z[i] = distrib.rsample()
         return self(latent_z)
