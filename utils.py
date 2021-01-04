@@ -29,6 +29,22 @@ def kl_divergence(z, mu, std):
     # return kl
     return (log_qzx - log_pz).sum(-1)
 
+def display_gray_image(image, ax=plt):
+    """Display an image with matplotlib"""
+    ax.axis("off")
+    ax.imshow(denormalize_image(image.cpu().detach())[0])
+
+def display_gray_images(imbatch):
+    """Display a batch of images with matplotlib"""
+    n_im = imbatch.shape[0]
+    n_rows = n_im // 4 + 1
+    _, axes = plt.subplots(n_rows, 4, squeeze=False, figsize=(4 * 6.4, n_rows * 4.8))
+    for r in range(n_rows):
+        for c in range(4):
+            axes[r][c].axis("off")
+    for i in range(imbatch.shape[0]):
+        display_image(imbatch[i], axes[i // 4][i % 4])
+
 def display_image(image, ax=plt):
     """Display an image with matplotlib"""
     ax.axis("off")
