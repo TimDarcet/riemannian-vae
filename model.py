@@ -26,7 +26,7 @@ class VAE(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
 
-        self.kl_weigth = kl_weight
+        self.kl_weight = kl_weight
         self.latent_dim = latent_dim
         # encoder, decoder
         # LeNet5 feature extractor + 2 linear layers
