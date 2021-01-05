@@ -53,7 +53,8 @@ class VAE(pl.LightningModule):
         # Get decoded distrib
         x_hat = self(latent_z)
         # Reconstruction likelihood
-        recon_lh = torch.distributions.Normal(x_hat, torch.exp(self.log_scale)).log_prob(x).sum()
+        recon_lh = torch.distributions.Normal(x_hat, torch.exp(self.log_scale)).log_prob(x)
+        recon_lh = recon_lh.view(batch_size, -1).sum(1)
         # KL divergence
         kl_div = kl_divergence(mu, std)
         # ELBO
