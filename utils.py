@@ -16,7 +16,7 @@ def denormalize_image(image):
     """Normalize values from (-1, 1) to (0, 1) range"""
     return (image * .5 + .5).clamp(0, 1)
 
-def kl_divergence(z, mu, std):
+def kl_divergence_MC(z, mu, std):
     """Calculate Monte carlo KL divergence"""
     # 1. define the first two probabilities (in this case Normal for both)
     p = torch.distributions.Normal(torch.zeros_like(mu), torch.ones_like(std))
@@ -28,6 +28,13 @@ def kl_divergence(z, mu, std):
 
     # return kl
     return (log_qzx - log_pz).sum(-1)
+
+def kl_divergence(mu, std):
+    """Calculate KL divergence of a gaussian with respect to N(0, 1)"""
+    var = std.pow(2)
+    mu_2 = mu.pow(2)
+    kl = (mu_2 + var - torch.log(std)).sum(1) - mu.shape[1]
+    return kl
 
 def display_gray_image(image, ax=plt):
     """Display an image with matplotlib"""

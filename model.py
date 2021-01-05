@@ -54,7 +54,7 @@ class VAE(pl.LightningModule):
         # Reconstruction likelihood
         recon_lh = torch.distributions.Normal(x_hat, torch.exp(self.log_scale)).log_prob(x).sum()
         # KL divergence
-        kl_div = kl_divergence(latent_z, mu, std)
+        kl_div = kl_divergence(mu, std)
         # ELBO
         elbo = (kl_div - recon_lh).mean()
         # log metrics
@@ -78,7 +78,7 @@ class VAE(pl.LightningModule):
         # Reconstruction likelihood
         recon_lh = torch.distributions.Normal(x_hat, torch.exp(self.log_scale)).log_prob(x).sum()
         # KL divergence
-        kl_div = kl_divergence(latent_z, mu, std)
+        kl_div = kl_divergence(mu, std)
         # ELBO
         elbo = (kl_div - recon_lh).mean()
         # log metrics
