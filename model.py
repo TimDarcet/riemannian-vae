@@ -11,7 +11,9 @@ import pytorch_lightning as pl
 from pl_bolts.models.autoencoders.components import resnet18_decoder, resnet18_encoder
 from torch import nn
 import torch
-from utils import kl_divergence, jacobian
+from tqdm import trange
+from utils import kl_divergence
+from collections import OrderedDict
 
 
 
@@ -24,19 +26,31 @@ class VAE(pl.LightningModule):
 
         self.latent_dim = latent_dim
         # encoder, decoder
-        self.encoder = resnet18_encoder(False, False)
-        self.encoder.conv1 = nn.Conv2d(input_channels, 64,
-                                       kernel_size=(3, 3), stride=(1, 1),
-                                       padding=(1, 1), bias=False)
-        self.decoder = resnet18_decoder(
-            latent_dim=latent_dim,
-            input_height=input_height,
-            first_conv=False,
-            maxpool1=False
+        # LeNet5 feature extractor + 2 linear layers
+        self.encoder = nn.Sequential(
+            nn.Conv2d(in_channels=1, out_channels=6, kernel_size=5, stride=1),
+            nn.Tanh(),
+            nn.AvgPool2d(kernel_size=2),
+            nn.Conv2d(in_channels=6, out_channels=16, kernel_size=5, stride=1),
+            nn.Tanh(),
+            nn.AvgPool2d(kernel_size=2),
+            nn.Conv2d(in_channels=16, out_channels=120, kernel_size=5, stride=1),
+            nn.Tanh(),
+            nn.Linear(in_features=120, out_features=latent_dim),
+            nn.Tanh(),
+            nn.Linear(in_features=latent_dim, out_features=2 * latent_dim),
         )
-        self.decoder.conv1 = nn.Conv2d(64, input_channels,
-                                       kernel_size=(3, 3), stride=(1, 1),
-                                       padding=(1, 1), bias=False)
+        # Reverse of the encoder
+        self.decoder = nn.Sequential(
+            nn.Linear(in_features=latent_dim, out_features=400, bias=True),
+            nn.ConvTranspose2d(in_channels=16, out_channels=16, kernel_size=2),
+            nn.Tanh(),
+            nn.ConvTranspose2d(in_channels=16, out_channels=6, kernel_size=5, stride=1),
+            nn.ConvTranspose2d(in_channels=6, out_channels=6, kernel_size=2),
+            nn.Tanh(),
+            nn.Conv2d(in_channels=6, out_channels=1, kernel_size=5, stride=1),
+            nn.Sigmoid()
+        )
         # Output probability distribution std
         self.log_scale = nn.Parameter(torch.Tensor([0.0]))
 
@@ -130,11 +144,9 @@ class VAE(pl.LightningModule):
         by doing a gaussian random walk starting at zero in the latent space.
         Uses the Riemannian metric as covariance."""
         latent_z = torch.zeros((length, self.latent_dim))
-        for i in range(1, length):
+        for i in trange(1, length):
             jac = self.generator_jacobian(latent_z[i - 1])
             metric = jac.T @ jac
-            # TODO: Given the metric, what should I use as covariance matrix?
-            # The metric itself seems fine
             # Add in a small identity matrix to handle singular covariance
             covariance = std * (metric + 0.01 * torch.eye(self.latent_dim))
             distrib = torch.distributions.MultivariateNormal(latent_z[i - 1], covariance)
