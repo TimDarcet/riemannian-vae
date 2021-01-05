@@ -17,7 +17,7 @@ class LeNet5Decoder(nn.Module):
     def forward(self, x):
         x = self.fc1(x)
         x = x.view(x.shape[0], 16, 5, 5)
-        x = torch.tanh(self.pool1())
+        x = torch.tanh(self.pool1(x))
         x = torch.tanh(self.pool2(self.conv1(x)))
         x = torch.sigmoid(self.conv2(x))
         return x
