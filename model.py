@@ -57,7 +57,7 @@ class VAE(pl.LightningModule):
         # KL divergence
         kl_div = kl_divergence(mu, std)
         # ELBO
-        elbo = (kl_div - recon_lh).mean()
+        elbo = (self.kl_weight * kl_div - recon_lh).mean()
         # log metrics
         self.log_dict({
             'train_elbo': elbo,
@@ -81,7 +81,7 @@ class VAE(pl.LightningModule):
         # KL divergence
         kl_div = kl_divergence(mu, std)
         # ELBO
-        elbo = (kl_div - recon_lh).mean()
+        elbo = (self.kl_weight * kl_div - recon_lh).mean()
         # log metrics
         self.log_dict({
             'val_elbo': elbo,
