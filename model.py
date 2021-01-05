@@ -15,42 +15,23 @@ from tqdm import trange
 from utils import kl_divergence
 from collections import OrderedDict
 
+from encoder import LeNet5Encoder
+from decoder import LeNet5Decoder
 
 
 class VAE(pl.LightningModule):
     """A simple VAE class with Resnet18 backends using Pytorch-lightning"""
     # Default params are for CIFAR10
-    def __init__(self, latent_dim=256, input_height=32, input_channels=3):
+    def __init__(self, latent_dim=256, input_channels=1):
         super().__init__()
         self.save_hyperparameters()
 
         self.latent_dim = latent_dim
         # encoder, decoder
         # LeNet5 feature extractor + 2 linear layers
-        self.encoder = nn.Sequential(
-            nn.Conv2d(in_channels=1, out_channels=6, kernel_size=5, stride=1),
-            nn.Tanh(),
-            nn.AvgPool2d(kernel_size=2),
-            nn.Conv2d(in_channels=6, out_channels=16, kernel_size=5, stride=1),
-            nn.Tanh(),
-            nn.AvgPool2d(kernel_size=2),
-            nn.Conv2d(in_channels=16, out_channels=120, kernel_size=5, stride=1),
-            nn.Tanh(),
-            nn.Linear(in_features=120, out_features=latent_dim),
-            nn.Tanh(),
-            nn.Linear(in_features=latent_dim, out_features=2 * latent_dim),
-        )
+        self.encoder = LeNet5Encoder(latent_dim, input_channels)
         # Reverse of the encoder
-        self.decoder = nn.Sequential(
-            nn.Linear(in_features=latent_dim, out_features=400, bias=True),
-            nn.ConvTranspose2d(in_channels=16, out_channels=16, kernel_size=2),
-            nn.Tanh(),
-            nn.ConvTranspose2d(in_channels=16, out_channels=6, kernel_size=5, stride=1),
-            nn.ConvTranspose2d(in_channels=6, out_channels=6, kernel_size=2),
-            nn.Tanh(),
-            nn.Conv2d(in_channels=6, out_channels=1, kernel_size=5, stride=1),
-            nn.Sigmoid()
-        )
+        self.decoder = LeNet5Decoder(latent_dim, input_channels)
         # Output probability distribution std
         self.log_scale = nn.Parameter(torch.Tensor([0.0]))
 
