@@ -22,10 +22,11 @@ from decoder import LeNet5Decoder
 class VAE(pl.LightningModule):
     """A simple VAE class with Resnet18 backends using Pytorch-lightning"""
     # Default params are for CIFAR10
-    def __init__(self, latent_dim=256, input_channels=1):
+    def __init__(self, latent_dim=256, input_channels=1, kl_weight=10):
         super().__init__()
         self.save_hyperparameters()
 
+        self.kl_weigth = kl_weight
         self.latent_dim = latent_dim
         # encoder, decoder
         # LeNet5 feature extractor + 2 linear layers
