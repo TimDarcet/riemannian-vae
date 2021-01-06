@@ -122,16 +122,22 @@ class VAE(pl.LightningModule):
         latent_z.requires_grad = True
         return torch.autograd.functional.jacobian(flat_gen, latent_z, strict=True)
 
+    def rieman_metric(self, latent_z):
+        """Return the riemannian metric induced by the output space on the
+        latent space at latent_z"""
+        jac = self.generator_jacobian(latent_z)
+        return jac.T @ jac  # No variance term because constant variance
+
+
     def riemann_walk(self, length=10, std=1):
         """Generate a sequence of random images
         by doing a gaussian random walk starting at zero in the latent space.
         Uses the Riemannian metric as covariance."""
         latent_z = torch.zeros((length, self.latent_dim))
         for i in trange(1, length):
-            jac = self.generator_jacobian(latent_z[i - 1])
-            metric = jac.T @ jac
+            metric = self.rieman_metric(latent_z[i - 1])
             # Add in a small identity matrix to handle singular covariance
-            covariance = std * (metric + 0.01 * torch.eye(self.latent_dim))
+            covariance = torch.inverse(std * (metric + 0.01 * torch.eye(self.latent_dim)))
             distrib = torch.distributions.MultivariateNormal(latent_z[i - 1], covariance)
             latent_z[i] = distrib.rsample()
         return self(latent_z)
@@ -152,10 +158,9 @@ class VAE(pl.LightningModule):
         Uses the Riemannian metric as covariance."""
         latent_z = torch.zeros((length, self.latent_dim))
         for i in trange(1, length):
-            jac = self.generator_jacobian(latent_z[i - 1])
-            metric = jac.T @ jac
+            metric = self.rieman_metric(latent_z[i - 1])
             # Add in a small identity matrix to handle singular covariance
-            covariance = std * (metric + 0.01 * torch.eye(self.latent_dim))
+            covariance = torch.inverse(std * (metric + 0.01 * torch.eye(self.latent_dim)))
             distrib = torch.distributions.MultivariateNormal(latent_z[i - 1], covariance)
             latent_z[i] = distrib.rsample()
         return latent_z
