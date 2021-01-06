@@ -135,3 +135,27 @@ class VAE(pl.LightningModule):
             distrib = torch.distributions.MultivariateNormal(latent_z[i - 1], covariance)
             latent_z[i] = distrib.rsample()
         return self(latent_z)
+
+    def random_walk_noise(self, length=10, std=1):
+        """Generate a sequence of random images
+        by doing a gaussian random walk starting at zero in the latent space.
+        Uses a diagonal covariance matrix equal to std times the identity."""
+        latent_z = torch.zeros((length, self.latent_dim))
+        stds = std * torch.ones(self.latent_dim)
+        for i in range(1, length):
+            latent_z[i] = torch.distributions.Normal(latent_z[i - 1], stds).rsample()
+        return latent_z
+
+    def riemann_walk_noise(self, length=10, std=1):
+        """Generate a sequence of random images
+        by doing a gaussian random walk starting at zero in the latent space.
+        Uses the Riemannian metric as covariance."""
+        latent_z = torch.zeros((length, self.latent_dim))
+        for i in trange(1, length):
+            jac = self.generator_jacobian(latent_z[i - 1])
+            metric = jac.T @ jac
+            # Add in a small identity matrix to handle singular covariance
+            covariance = std * (metric + 0.01 * torch.eye(self.latent_dim))
+            distrib = torch.distributions.MultivariateNormal(latent_z[i - 1], covariance)
+            latent_z[i] = distrib.rsample()
+        return latent_z
